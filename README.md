@@ -6,6 +6,8 @@ runs under Windows, Mac or Linux operating systems.
 
 To install, download this repository into a folder. In MATLAB (R2009b or higher) go to *Set Path* and add the directory wave_clus with subfolders to the MATLAB path.
 
+Branched towards the end of making compatabile with the phyzzy pipeline - https://github.com/freiwaldlab/phyzzy
+
 How to use
 ------
 To open the GUI type `wave_clus` in the MATLAB command prompt. To use the batch functions type `Get_spikes(‘filename’)` to do the spike detection
