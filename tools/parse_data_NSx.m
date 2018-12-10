@@ -1,4 +1,4 @@
-function parse_data_NSx(filename,max_memo_GB)
+function [outfile_path] = parse_data_NSx(filename,max_memo_GB)
 % Code only valid for recordings without pauses or data loss (Nsx.Data field can't be a cell)
 % This code requires the file openNSx.m, from the NPMK, in the path. You can download the download NPMK from https://github.com/BlackrockMicrosystems/NPMK/releases
 % max_memo_GB is an idea of the number of GB allocated for the data to be
@@ -29,6 +29,7 @@ end
 tcum=0;
 
 if length(filename)<3 || (~strcmpi(filename(3),'\') && ...
+                  ~strcmpi(filename(3),'/') && ...
                  ~strcmpi(filename(1),'/') && ...
                  ~strcmpi(filename(2),'/') && ...
                  ~strcmpi(filename(1:2), '\\'))
@@ -46,10 +47,12 @@ lts = NSx.MetaTags.DataPoints;   % total data points
 samples_per_channel = ceil(max_memo/nchan/2);
 num_segments = ceil(lts/samples_per_channel);
 
-
+[filepath, file, ~] = fileparts(filename);
 outfile_handles = cell(1,nchan);
+outfile_path = cell(1,nchan);
 for i = 1:nchan
-    outfile_handles{i} = fopen(['NSX' num2str(NSx.MetaTags.ChannelID(i)) '.NC5'],'w');  
+    outfile_path{i} = [filepath filesep file '_NSX_Ch' num2str(NSx.MetaTags.ChannelID(i)) '.NC5'];
+    outfile_handles{i} = fopen(outfile_path{i},'w');
 end
 
 TimeStamps=linspace(0,(lts-1)*1e6/sr,lts); %TimeStamps in microsec, with 0 corresponding to the first sample
