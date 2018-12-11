@@ -50,13 +50,18 @@ num_segments = ceil(lts/samples_per_channel);
 [filepath, file, ~] = fileparts(filename);
 outfile_handles = cell(1,nchan);
 outfile_path = cell(1,nchan);
+parsedFolder = [filepath filesep file '_parsed'];
+if ~exist(parsedFolder, 'dir')
+  mkdir(parsedFolder);
+end
+
 for i = 1:nchan
-    outfile_path{i} = [filepath filesep file '_NSX_Ch' num2str(NSx.MetaTags.ChannelID(i)) '.NC5'];
+    outfile_path{i} = [parsedFolder filesep  file 'c_NSX_Ch' num2str(NSx.MetaTags.ChannelID(i)) '.NC5'];
     outfile_handles{i} = fopen(outfile_path{i},'w');
 end
 
 TimeStamps=linspace(0,(lts-1)*1e6/sr,lts); %TimeStamps in microsec, with 0 corresponding to the first sample
-save('NSX_TimeStamps','TimeStamps','lts','nchan','sr');
+save([parsedFolder filesep file '_NSX_TimeStamps'],'TimeStamps','lts','nchan','sr');
 clear TimeStamps;
 fprintf('TimeStamps generated. Data will be processed in %d segments of %d samples each.\n',num_segments,min(samples_per_channel,lts))
 

@@ -21,8 +21,8 @@ par.maxtemp = 0.251;                 % maximum temperature for SPC
 par.tempstep = 0.01;                 % temperature steps
 par.SWCycles = 100;                  % SPC iterations for each temperature (default 100)
 par.KNearNeighb = 11;                % number of nearest neighbors for SPC
-par.min_clus =20;                   % minimum size of a cluster (default 60)
-par.max_clus = 200;                   % maximum number of clusters allowed (default 13)
+par.min_clus = 100;                  % minimum size of a cluster (default 20)
+par.max_clus = 33;                   % maximum number of clusters allowed (default 200)
 par.randomseed = 0;                  % if 0, random seed is taken as the clock value (default 0)
 %par.randomseed = 147;               % If not 0, random seed
 %par.temp_plot = 'lin';              % temperature plot in linear scale
@@ -41,19 +41,19 @@ par.alignment_window = 10;           % number of points around the sample expect
 par.stdmin = 5;                      % minimum threshold for detection
 par.stdmax = 50;                     % maximum threshold for detection
 par.detect_fmin = 300;               % high pass filter for detection
-par.detect_fmax = 3000;              % low pass filter for detection (default 1000)
+par.detect_fmax = 10000;              % low pass filter for detection (default 3000)
 par.detect_order = 4;                % filter order for detection
 par.sort_fmin = 300;                 % high pass filter for sorting
-par.sort_fmax = 3000;                % low pass filter for sorting (default 3000)
+par.sort_fmax = 10000;                % low pass filter for sorting (default 3000)
 par.sort_order = 2;                  % filter order for sorting
 par.ref_ms = 1.5;                    % detector dead time, minimum refractory period (in ms)
-par.detection = 'pos';               % type of threshold ('pos','neg','both')
-% par.detection = 'neg';
+% par.detection = 'pos';               % type of threshold ('pos','neg','both')
+par.detection = 'neg';
 % par.detection = 'both';
 
 % INTERPOLATION PARAMETERS
 par.int_factor = 5;                  % interpolation factor
-par.interpolation = 'y';             % interpolation with cubic splines (default)
+par.interpolation = 'y';             % interpolation with cubic splines (default 'y')
 % par.interpolation = 'n';
 
 
@@ -61,14 +61,14 @@ par.interpolation = 'y';             % interpolation with cubic splines (default
 par.min_inputs = 10;         % number of inputs to the clustering
 par.max_inputs = 0.75;       % number of inputs to the clustering. if < 1 it will the that proportion of the maximum.
 par.scales = 4;                        % number of scales for the wavelet decomposition
-par.features = 'wav';                % type of feature ('wav' or 'pca')
-%par.features = 'pca'
+%par.features = 'wav';                % type of feature ('wav' or 'pca')
+par.features = 'pca';
 
 
 % FORCE MEMBERSHIP PARAMETERS
-par.template_sdnum = 3;             % max radius of cluster in std devs.
-par.template_k = 10;                % # of nearest neighbors
-par.template_k_min = 10;            % min # of nn for vote
+par.template_sdnum = 1;             % max radius of cluster in std devs.
+par.template_k = 100;               % # of nearest neighbors
+par.template_k_min = 50;            % min # of nn for vote
 %par.template_type = 'mahal';       % nn, center, ml, mahal
 par.template_type = 'center';       % nn, center, ml, mahal
 par.force_feature = 'spk';          % feature use for forcing (whole spike shape)
