@@ -3,6 +3,7 @@ classdef readInData < handle
     %common interface.
 	properties
         par             % parameters used, this will be updated with the data readed.
+        file_path       % the filepath of the the data's origin file.
         nick_name       % name of the file without extension.
         with_raw        % boolean flag. True if the raw data was found and supported.
         with_spikes     % boolean flag. True if a file with spikes was readed.
@@ -21,6 +22,7 @@ classdef readInData < handle
             [unused, fnam, ext] = fileparts(par_ui.filename);
             ext = lower(ext);
             obj.par = par_ui;
+            obj.file_path = unused;
             obj.nick_name = fnam;
             obj.n_to_read = 1;
             obj.with_results = false;
@@ -143,7 +145,7 @@ classdef readInData < handle
             end
             
             if obj.with_wc_spikes                               %wc data have priority
-                load([obj.nick_name '_spikes.mat']);
+                load([obj.file_path filesep obj.nick_name '_spikes.mat']);
                 if ~ exist('index_ts','var')                    %for retrocompatibility
                     index_ts = index;
                 end

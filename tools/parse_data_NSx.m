@@ -56,7 +56,7 @@ if ~exist(parsedFolder, 'dir')
 end
 
 for i = 1:nchan
-    outfile_path{i} = [parsedFolder filesep  file 'c_NSX_Ch' num2str(NSx.MetaTags.ChannelID(i)) '.NC5'];
+    outfile_path{i} = [parsedFolder filesep  file '_NSX_Ch' num2str(NSx.MetaTags.ChannelID(i)) '.NC5'];
     outfile_handles{i} = fopen(outfile_path{i},'w');
 end
 

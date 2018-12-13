@@ -263,7 +263,7 @@ if make_plots
                 ylim([-plotmax plotmax])
             end
         end
-        title([pwd '/' filename],'Interpreter','none','Fontsize',14)
+        title([data_handler.file_path filesep filename],'Interpreter','none','Fontsize',14)
 
         if ~data_handler.with_spc
             print2file = par_file.print2file;
@@ -271,7 +271,7 @@ if make_plots
                 print2file = par_input.print2file;
             end
             if print2file
-                print(curr_fig,'-dpng',['fig2print_' filename '.png'],resolution);
+                print(curr_fig,'-dpng',[data_handler.file_path filesep 'fig2print_' filename '.png'],resolution);
             else
                 print(curr_fig)
             end
@@ -487,11 +487,12 @@ function do_clustering_single(filename,min_spikes4SPC, par_file, par_input,fnum)
 %     if isfield(par,'channels') && ~isnan(par.channels)
 %         par.max_inputs = par.max_inputs * par.channels;
 %     end
-
-    par.fname_in = ['tmp_data_wc' num2str(fnum)];                       % temporary filename used as input for SPC
-    par.fname = ['data_' data_handler.nick_name];
+    
+    par.fname_in = [data_handler.file_path filesep 'tmp_data_wc' num2str(fnum)];                       % temporary filename used as input for SPC
+    par.fname = [data_handler.file_path filesep 'data_' data_handler.nick_name];
     par.nick_name = data_handler.nick_name;
-    par.fnamespc = ['data_wc' num2str(fnum)];
+    par.file_path = data_handler.file_path;
+    par.fnamespc = [data_handler.file_path filesep 'data_wc' num2str(fnum)];
 
 
 
@@ -539,14 +540,14 @@ function do_clustering_single(filename,min_spikes4SPC, par_file, par_input,fnum)
     %INTERACTION WITH SPC
     save(par.fname_in,'inspk_aux','-ascii');
     try
-        [clu, tree] = run_cluster(par,true);
-		if exist([par.fnamespc '.dg_01.lab'],'file')
-			movefile([par.fnamespc '.dg_01.lab'], [par.fname '.dg_01.lab'], 'f');
-			movefile([par.fnamespc '.dg_01'], [par.fname '.dg_01'], 'f');
-		end
+      [clu, tree] = run_cluster(par,true);
+      if exist([par.fnamespc '.dg_01.lab'],'file')
+        movefile([par.fnamespc '.dg_01.lab'], [par.fname '.dg_01.lab'], 'f');
+        movefile([par.fnamespc '.dg_01'], [par.fname '.dg_01'], 'f');
+      end
     catch
-        warning('MyComponent:ERROR_SPC', 'Error in SPC');
-        return
+      warning('MyComponent:ERROR_SPC', 'Error in SPC');
+      return
     end
 
     [clust_num temp auto_sort] = find_temp(tree,clu,par);
@@ -613,14 +614,14 @@ function do_clustering_single(filename,min_spikes4SPC, par_file, par_input,fnum)
     cluster_class(:,2)= index';
     cluster_class(:,1)= classes';
     try
-      save(['times_' data_handler.nick_name], 'cluster_class','spikes', 'par','inspk','forced','Temp','gui_status');
+      save([data_handler.file_path filesep 'times_' data_handler.nick_name], 'cluster_class','spikes', 'par','inspk','forced','Temp','gui_status');
       if exist('ipermut','var')
-          save(['times_' data_handler.nick_name],'ipermut','-append');
+          save([data_handler.file_path filesep 'times_' data_handler.nick_name],'ipermut','-append');
       end
     catch
-      save(['times_' data_handler.nick_name], 'cluster_class','spikes', 'par','inspk','forced','Temp','gui_status','-v7.3');
+      save([data_handler.file_path filesep 'times_' data_handler.nick_name], 'cluster_class','spikes', 'par','inspk','forced','Temp','gui_status','-v7.3');
       if exist('ipermut','var')
-          save(['times_' data_handler.nick_name],'ipermut','-append','-v7.3');
+          save([data_handler.file_path filesep 'times_' data_handler.nick_name],'ipermut','-append','-v7.3');
       end
     end
 

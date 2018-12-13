@@ -61,12 +61,12 @@ par.interpolation = 'y';             % interpolation with cubic splines (default
 par.min_inputs = 10;         % number of inputs to the clustering
 par.max_inputs = 0.75;       % number of inputs to the clustering. if < 1 it will the that proportion of the maximum.
 par.scales = 4;                        % number of scales for the wavelet decomposition
-%par.features = 'wav';                % type of feature ('wav' or 'pca')
-par.features = 'pca';
+par.features = 'wav';                % type of feature ('wav' or 'pca')
+%par.features = 'pca';
 
 
 % FORCE MEMBERSHIP PARAMETERS
-par.template_sdnum = 1;             % max radius of cluster in std devs.
+par.template_sdnum = 1.5;           % max radius of cluster in std devs.
 par.template_k = 100;               % # of nearest neighbors
 par.template_k_min = 50;            % min # of nn for vote
 %par.template_type = 'mahal';       % nn, center, ml, mahal

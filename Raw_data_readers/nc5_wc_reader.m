@@ -27,8 +27,9 @@ classdef nc5_wc_reader < handle
     end 
 	methods 
         function obj = nc5_wc_reader(par, raw_filename)
-            filesplit = split('20181205Mo003_NSX_Ch1.NC5', '_');
-            load([filesplit{1} '_NSX_TimeStamps.mat'],'lts', 'sr');
+            [tmpPath, filename_end, ext] = fileparts(raw_filename);
+            filesplit = split(filename_end, '_');
+            load([tmpPath filesep  filesplit{1} '_NSX_TimeStamps.mat'],'lts', 'sr');
 
             obj.sr = sr;
             

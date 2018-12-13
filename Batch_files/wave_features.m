@@ -101,7 +101,7 @@ switch feature
 
         coeff(1:inputs)=ind(ls:-1:ls-inputs+1);
     case 'pca'
-        [C,S] = princomp(spikes);
+        [C,S] = pca(spikes);
         cc = S;
         coeff = 1:size(S,2);
         warning('PCA uses 10 features')

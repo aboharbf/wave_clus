@@ -1,4 +1,4 @@
-function Get_spikes(input, varargin)
+function output_files = Get_spikes(input, varargin)
 
 % PROGRAM Get_spikes.
 % Detect spikes and save them in a file.
@@ -117,17 +117,18 @@ end
 
 init_date = now;
 
+output_files = cell(length(filenames), 1);
 
 if run_parfor == true
     parfor fnum = 1:length(filenames)
         filename = filenames{fnum};
-        get_spikes_single(filename, par_input);
+        output_files{fnum} = get_spikes_single(filename, par_input);
         disp(sprintf('%d of %d ''spikes'' files done.',count_new_sp_files(init_date, filenames),length(filenames)))
     end
 else
     for fnum = 1:length(filenames)
         filename = filenames{fnum};
-        get_spikes_single(filename, par_input);
+        output_files{fnum} = get_spikes_single(filename, par_input);
         disp(sprintf('%d of %d ''spikes'' files done.',count_new_sp_files(init_date, filenames),length(filenames)))
     end
 end
@@ -145,7 +146,7 @@ end
 end
 
 
-function get_spikes_single(filename, par_input)
+function output_path = get_spikes_single(filename, par_input)
     
     par = set_parameters();
     par.filename = filename;
@@ -190,20 +191,20 @@ function get_spikes_single(filename, par_input)
     par.detection_date =  datestr(now);
     
     %<----  Add here auxiliar parameters
-
+    output_path = [data_handler.file_path filesep data_handler.nick_name '_spikes.mat'];
     if current_par.cont_segment && data_handler.with_raw
-        [psegment, sr_psegment] = data_handler.get_signal_sample();
-        try
-			save([data_handler.nick_name '_spikes'], 'spikes', 'index', 'par','psegment','sr_psegment','threshold')
-		catch
-			save([data_handler.nick_name '_spikes'], 'spikes', 'index', 'par','psegment','sr_psegment','threshold','-v7.3')
-		end
+      [psegment, sr_psegment] = data_handler.get_signal_sample();
+      try
+        save([data_handler.file_path filesep data_handler.nick_name '_spikes'], 'spikes', 'index', 'par','psegment','sr_psegment','threshold')
+      catch
+        save([data_handler.file_path filesep data_handler.nick_name '_spikes'], 'spikes', 'index', 'par','psegment','sr_psegment','threshold','-v7.3')
+      end
     else
-		try
-			save([data_handler.nick_name '_spikes'], 'spikes', 'index', 'par')
-		catch
-			save([data_handler.nick_name '_spikes'], 'spikes', 'index', 'par','-v7.3')
-		end
+      try
+        save([data_handler.file_path filesep data_handler.nick_name '_spikes'], 'spikes', 'index', 'par')
+      catch
+        save([data_handler.file_path filesep data_handler.nick_name '_spikes'], 'spikes', 'index', 'par','-v7.3')
+      end
     end
 
 end
@@ -213,7 +214,7 @@ counter = 0;
 for i = 1:length(filenames)
     fname = filenames{i};
     [unu, fname] = fileparts(fname);
-    FileInfo = dir([fname '_spikes.mat']);
+    FileInfo = dir([unu filesep fname '_spikes.mat']);
     if length(FileInfo)==1 && (FileInfo.datenum > initial_date)
         counter = counter + 1;
     end
