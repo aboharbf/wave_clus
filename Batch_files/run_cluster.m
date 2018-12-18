@@ -3,6 +3,13 @@ dim = par.inputs;
 fname = par.fnamespc;
 fname_in = par.fname_in;
 
+%temporary path shorting (SPC seems to have issue w/ longer paths)
+origfname = fname;
+origfname_in = fname_in;
+[~, fname_in, ~] = fileparts(fname_in);
+[tmpDir, fname, ~] = fileparts(fname);
+oldDir = cd(tmpDir);
+
 % DELETE PREVIOUS FILES
 if exist([fname '.dg_01.lab'],'file')
     delete([fname '.dg_01.lab']);
@@ -103,8 +110,6 @@ if status ~= 0
     disp(result)
 end
 
-
-
 if exist('multi_files','var') && multi_files==true
   [A B C] = fileparts(par.filename);
 	log_name = [A filesep B '_spc_log.txt'];
@@ -133,4 +138,5 @@ if exist([fname '.knn'],'file')
     delete([fname '.knn']);
 end
 
-delete(fname_in); 
+delete(fname_in);
+cd(oldDir);

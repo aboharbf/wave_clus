@@ -1,4 +1,4 @@
-function Do_clustering(input, varargin)
+function output_files = Do_clustering(input, varargin)
 
 % PROGRAM Do_clustering.
 % Does clustering on all files in Files.txt
@@ -155,42 +155,46 @@ if make_times
 
     initial_date = now;
     Nfiles = length(filenames);
+    output_files = cell(Nfiles,1);
     if run_par_for == true
         parfor fnum = 1:Nfiles
             filename = filenames{fnum};
-            do_clustering_single(filename,min_spikes4SPC, par_file, par_input,fnum);
+            output_files{fnum} = do_clustering_single(filename,min_spikes4SPC, par_file, par_input,fnum);
             disp(sprintf('%d of %d ''times'' files finished.',count_new_times(initial_date, filenames),Nfiles))
         end
     else
         for fnum = 1:length(filenames)
             filename = filenames{fnum};
-            do_clustering_single(filename,min_spikes4SPC, par_file, par_input,fnum);
+            output_files{fnum} = do_clustering_single(filename,min_spikes4SPC, par_file, par_input,fnum);
             disp(sprintf('%d of %d ''times'' files finished.',count_new_times(initial_date, filenames),Nfiles))
         end
     end
     if parallel == true
-        if exist('matlabpool','file')
-            matlabpool('close')
-        else
-            poolobj = gcp('nocreate');
-            delete(poolobj);
-        end
+      if exist('matlabpool','file')
+        matlabpool('close')
+      else
+        poolobj = gcp('nocreate');
+        delete(poolobj);
+      end
     end
+    
+    [fileDir, fileN, ~] = fileparts(filename);
+    
+    log_name = [fileDir filesep 'spc_log.txt'];
+    f = fopen(log_name, 'w');
+    for fnum = 1:length(filenames)
+      filename = filenames{fnum};
+      log_name = [fileDir filesep fileN '_spc_log.txt'];
+      if exist(log_name, 'file')
+        fi = fopen(log_name,'r');
+        result = fread(fi);
+        fwrite(f,result);
+        fclose(fi);
+        delete(log_name);
+      end
+    end
+    fclose(f);
 
-	log_name = 'spc_log.txt';
-	f = fopen(log_name, 'w');
-	for fnum = 1:length(filenames)
-        filename = filenames{fnum};
-        log_name = [filename 'spc_log.txt'];
-        if exist(log_name, 'file')
-			fi = fopen(log_name,'r');
-			result = fread(fi);
-			fwrite(f,result);
-			fclose(fi);
-			delete(log_name);
-		end
-    end
-	fclose(f);
 
 	tocaux = toc;
     disp(['Computations Done (' num2str(tocaux,'%2.2f') 's).'])
@@ -216,9 +220,10 @@ if make_plots
         filename = filenames{fnum};
         par = struct;
         par.filename = filename;
-
+        
+        %TESTING
         par.cont_segment = true;  %maybe true and save the sample in spikes
-
+        
         data_handler = readInData(par);
         par = data_handler.update_par(par);
 
@@ -228,11 +233,11 @@ if make_plots
         if ~data_handler.with_wc_spikes       			%data should have spikes
             continue
         end
-        filename = data_handler.nick_name;
+        filename = [data_handler.file_path filesep data_handler.nick_name];
 
         file_pos_names = {'','a','b','c','d','e','f'};
         for i=1:length(file_pos_names)
-            new_file_name = ['fig2print_' filename file_pos_names{i} '.png'];
+            new_file_name = [fileDir filesep 'fig2print_' fileN file_pos_names{i} '.png'];
             if exist(new_file_name, 'file')==2
                 delete(new_file_name);
             end
@@ -263,7 +268,7 @@ if make_plots
                 ylim([-plotmax plotmax])
             end
         end
-        title([data_handler.file_path filesep filename],'Interpreter','none','Fontsize',14)
+        title(filename,'Interpreter','none','Fontsize',14)
 
         if ~data_handler.with_spc
             print2file = par_file.print2file;
@@ -271,7 +276,7 @@ if make_plots
                 print2file = par_input.print2file;
             end
             if print2file
-                print(curr_fig,'-dpng',[data_handler.file_path filesep 'fig2print_' filename '.png'],resolution);
+                print(curr_fig,'-dpng',[data_handler.file_path filesep 'fig2print_' data_handler.nick_name '.png'],resolution);
             else
                 print(curr_fig)
             end
@@ -435,7 +440,7 @@ if make_plots
 
         features_name = par.features;
 
-        outfileclus='cluster_results.txt';
+        outfileclus= [data_handler.file_path filesep data_handler.nick_name '_cluster_results.txt'];
         fout=fopen(outfileclus,'at+');
         if isfield(par,'stdmin')
             stdmin = par.stdmin;
@@ -449,9 +454,9 @@ if make_plots
         fclose(fout);
 
         if par.print2file
-            print(curr_fig,'-dpng',['fig2print_' filename '.png'],resolution);
+            print(curr_fig,'-dpng',[data_handler.file_path filesep 'fig2print_' data_handler.nick_name '.png'],resolution);
             if numclus>3
-                print(curr_fig2,'-dpng',['fig2print_' filename 'a.png'],resolution);
+                print(curr_fig2,'-dpng',[data_handler.file_path filesep 'fig2print_' data_handler.nick_name 'a.png'],resolution);
             end
         else
             print(curr_fig)
@@ -470,7 +475,7 @@ toc
 
 end
 
-function do_clustering_single(filename,min_spikes4SPC, par_file, par_input,fnum)
+function output_file = do_clustering_single(filename,min_spikes4SPC, par_file, par_input,fnum)
 
     par = struct;
     par = update_parameters(par,par_file,'clus');
@@ -613,15 +618,18 @@ function do_clustering_single(filename,min_spikes4SPC, par_file, par_input,fnum)
     cluster_class = zeros(nspk,2);
     cluster_class(:,2)= index';
     cluster_class(:,1)= classes';
+    
+    %Save Clustering Results
+    output_file = [data_handler.file_path filesep 'times_' data_handler.nick_name '.mat'];
     try
-      save([data_handler.file_path filesep 'times_' data_handler.nick_name], 'cluster_class','spikes', 'par','inspk','forced','Temp','gui_status');
+      save(output_file, 'cluster_class','spikes', 'par','inspk','forced','Temp','gui_status');
       if exist('ipermut','var')
-          save([data_handler.file_path filesep 'times_' data_handler.nick_name],'ipermut','-append');
+          save(output_file,'ipermut','-append');
       end
     catch
-      save([data_handler.file_path filesep 'times_' data_handler.nick_name], 'cluster_class','spikes', 'par','inspk','forced','Temp','gui_status','-v7.3');
+      save(output_file, 'cluster_class','spikes', 'par','inspk','forced','Temp','gui_status','-v7.3');
       if exist('ipermut','var')
-          save([data_handler.file_path filesep 'times_' data_handler.nick_name],'ipermut','-append','-v7.3');
+          save(output_file,'ipermut','-append','-v7.3');
       end
     end
 
