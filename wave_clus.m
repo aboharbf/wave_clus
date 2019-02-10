@@ -158,9 +158,9 @@ cla(handles.cont_data);
 clear functions % reset functions, force to reload set_parameters next
 handles.par = set_parameters();
 
-cd(pathname);
+%cd(pathname);
 
-handles.par.filename = filename;
+handles.par.filename = [pathname filename];
 
 for i = 1:3
     si = num2str(i);
@@ -188,11 +188,14 @@ end
 data_handler = readInData(handles.par);
 handles.par = data_handler.par;
 
-handles.par.fname_in = 'tmp_data_wc';                       % temporary filename used as input for SPC
+tmpParts = split(data_handler.nick_name, 'Ch');
+
+handles.par.file_path = data_handler.file_path;
+handles.par.fname_in = [data_handler.file_path filesep 'tmp_data_wc' tmpParts{end}];                        % temporary filename used as input for SPC
 handles.par.fname = ['data_' data_handler.nick_name];
 handles.par.nick_name = data_handler.nick_name;
-handles.par.fnamesave = handles.par.fname;                  %filename if "save clusters" button is pressed
-handles.par.fnamespc = 'data_wc';
+handles.par.fnamesave = [data_handler.file_path filesep handles.par.fname];                  %filename if "save clusters" button is pressed
+handles.par.fnamespc = [data_handler.file_path filesep 'data_wc' tmpParts{end}];
 
 handles.par = data_handler.update_par(handles.par);
 check_WC_params(handles.par)
@@ -235,7 +238,7 @@ else
     handles.par.inputs = size(inspk,2);                       % number of inputs to the clustering
 
     if handles.par.permut == 'y'
-        if handles.par.match == 'y';
+        if handles.par.match == 'y'
             naux = min(handles.par.max_spk,size(inspk,1));
             ipermut = randperm(length(inspk));
             ipermut(naux+1:end) = [];
@@ -244,7 +247,7 @@ else
         end
         inspk_aux = inspk(ipermut,:);
     else
-        if handles.par.match == 'y';
+        if handles.par.match == 'y'
             naux = min(handles.par.max_spk,size(inspk,1));
             inspk_aux = inspk(1:naux,:);
         else
@@ -255,8 +258,8 @@ else
     %Interaction with SPC
     set(handles.file_name,'string','Running SPC ...'); drawnow
     fname_in = handles.par.fname_in;
+    
     save(fname_in,'inspk_aux','-ascii');                      %Input file for SPC
-
     [clu,tree] = run_cluster(handles.par);
     forced = false(size(spikes,1) ,1);
     rejected = false(1, size(spikes,1));
@@ -267,7 +270,7 @@ handles.par.file_name_to_show = [pathname filename];
 
 if (data_handler.with_raw || data_handler.with_psegment) && handles.par.cont_segment         %raw exists
     [xd_sub, sr_sub] = data_handler.get_signal_sample();
-    Plot_continuous_data(xd_sub, sr_sub, handles); drawnow
+    handles = Plot_continuous_data(xd_sub, sr_sub, handles); drawnow
     clear xd_sub
 end
 

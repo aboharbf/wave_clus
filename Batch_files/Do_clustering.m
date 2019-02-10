@@ -56,7 +56,9 @@ nvar = length(varargin);
 for v = 1:nvar
     if strcmp(varargin{v},'par')
         if (nvar>=v+1) && isstruct(varargin{v+1})
-            par_input = varargin{v+1};
+          par_input = varargin{v+1};
+        elseif (nvar>=v+1) && isa(varargin{v+1}, 'function_handle')
+          par_input = feval(varargin{v+1});
         else
             error('Error in ''par'' optional input.')
         end
@@ -204,8 +206,8 @@ end
 if make_plots
     disp('Creating figures...')
     numfigs = length(filenames);
-    curr_fig = figure('Visible','Off');
-    curr_fig2 = figure('Visible','Off');
+    curr_fig = figure('Name','waveClusResult_GUIPanel','Visible','On','NumberTitle','off');
+    curr_fig2 = figure('Name','waveClusResult_GUIPanel2','Visible','On','NumberTitle','off');
     set(curr_fig, 'PaperUnits', 'inches', 'PaperType', 'A4', 'PaperPositionMode', 'auto','units','normalized','outerposition',[0 0 1 1],'RendererMode','manual','Renderer','painters')
     set(curr_fig2, 'PaperUnits', 'inches', 'PaperType', 'A4', 'PaperPositionMode', 'auto','units','normalized','outerposition',[0 0 1 1],'RendererMode','manual','Renderer','painters')
     if isfield(get(curr_fig),'GraphicsSmoothing')
@@ -254,6 +256,7 @@ if make_plots
             noise_std_detect = median(abs(xd_sub))/0.6745;
             xlim([0 lx/sr_sub])
             thr = par.stdmin * noise_std_detect;
+            par.thr = thr;
             plotmax = 15 * noise_std_detect; %thr*par.stdmax/par.stdmin;
 
             if strcmp(par.detection,'pos')
@@ -466,11 +469,13 @@ if make_plots
         end
         fprintf('%d ',fnum);
     end
-    close(curr_fig)
-    close(curr_fig2)
-    disp(' ')
+    figHandles = findobj('Type', 'figure');
+    for ii = 1:length(figHandles)
+      if isempty(figHandles(ii).Children)
+        close(figHandles(ii))
+      end      
+    end
 end
-
 toc
 
 end
