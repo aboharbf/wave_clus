@@ -584,9 +584,11 @@ end
 
 %If we set a threshold, resort the members of clu back to their proper
 %place.
+spikeMask = find(spikeMask);
 if par.clusThr == 'y'
   clu_aux = zeros(size(clu))-1;
-  clu_aux(:,spikeMask) = clu(:,1:sum(spikeMask));
+  clu_aux(:,spikeMask+2) = clu(:,(1:length(spikeMask))+2);
+  clu_aux(:,1:2) = clu(:,1:2);
   clu = clu_aux;
   clear clu_aux
 end
