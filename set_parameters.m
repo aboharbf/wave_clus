@@ -20,7 +20,7 @@ par.tempstep = 0.01;                 % temperature steps
 par.SWCycles = 100;                  % SPC iterations for each temperature (default 100) 
 par.KNearNeighb = 11;                % number of nearest neighbors for SPC 
 par.min_clus = 200;                  % minimum size of a cluster (default 20) 
-par.max_clus = 4;                    % maximum number of clusters allowed (default 200) 
+par.max_clus = 3;                    % maximum number of clusters allowed (default 200) 
 par.randomseed = 0;                  % if 0, random seed is taken as the clock value (default 0) 
 
 %par.randomseed = 147;               % If not 0, random seed 
@@ -75,7 +75,7 @@ par.force_auto = true;              %automatically force membership (only for ba
 % TEMPLATE MATCHING 
 par.match = 'y';                    % for template matching 
 %par.match = 'n';                   % for no template matching 
-par.max_spk = 40000;                % max. # of spikes before starting templ. match. 
+par.max_spk = 50000;                % max. # of spikes before starting templ. match. 
 %par.permut = 'y';                   % for selection of random 'par.max_spk' spikes before starting templ. match. 
 par.permut = 'n';                 % for selection of the first 'par.max_spk' spikes before starting templ. match. 
  

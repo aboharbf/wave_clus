@@ -527,8 +527,8 @@ end
 inspk = wave_features(spikes,par);                % takes wavelet coefficients.
 par.inputs = size(inspk,2);                       % number of inputs to the clustering
 
-par.clusThr = 'n';
 % Spike amplitudes below some threshold are excluded from clustering.
+par.clusThr = 'n';
 if par.clusThr == 'y'
   spikePeaks = max(abs(spikes),[],2);
   spikeMask = spikePeaks > 120; %Get this variable from parameters or spikes, whichever we can add it to most easily.
@@ -579,13 +579,13 @@ if par.permut == 'y'
   clu = clu_aux;
   clear clu_aux
 else %To unify the processing streams of permut vs non-permut data, bring clu to order here for both.
-  clu = [clu, zeros(size(clu,1),2 + size(spikes,1) - size(clu,2))-1];
-end
+  clu = [clu, zeros(size(clu,1), size(spikes,1) - size(clu,2) + 2)-1];
+end 
 
 %If we set a threshold, resort the members of clu back to their proper
 %place.
-spikeMask = find(spikeMask);
 if par.clusThr == 'y'
+  spikeMask = find(spikeMask);
   clu_aux = zeros(size(clu))-1;
   clu_aux(:,spikeMask+2) = clu(:,(1:length(spikeMask))+2);
   clu_aux(:,1:2) = clu(:,1:2);
