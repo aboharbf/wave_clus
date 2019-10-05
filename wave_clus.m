@@ -207,9 +207,12 @@ if data_handler.with_results %data have _times files
     if isempty(ipermut)
         handles.par.permut = 'n';
     end
-
+    
+    %Create Index
+    nspk = size(spikes,1);
+    nspk_ind = (1:nspk)';
+    inspk_ind_masked = nspk_ind;
 else
-
     if data_handler.with_spikes  %data have some time of _spikes files
         [spikes, index] = data_handler.load_spikes();
         if ~data_handler.with_wc_spikes
@@ -219,15 +222,29 @@ else
         set(handles.file_name,'string','Detecting spikes ...'); drawnow
         index = [];
         spikes = [];
+        temp_aux_th_vect = [];
         for n = 1:data_handler.max_segments
             x = data_handler.get_segment();
             [new_spikes, temp_aux_th, new_index]  = amp_detect(x, handles.par);
-            index = [index data_handler.index2ts(new_index)]; %new_index to ms
+            index = [index data_handler.index2ts(new_index)]; % new_index to ms
             spikes = [spikes; new_spikes];
+            temp_aux_th_vect = [temp_aux_th_vect; temp_aux_th];
+        end
+        if strcmp(handles.par.detection,'neg')
+          handles.par.threshold = mean(temp_aux_th_vect) * -1;
+        else
+          handles.par.threshold = mean(temp_aux_th_vect);
         end
         handles.par.detection_date =  datestr(now);
     end
-
+    
+    %If you have too many spikes, use 1:max_spk
+    nspk = size(spikes,1);
+    nspk_ind = (1:nspk)';
+    %naux = min(handles.par.max_spk,size(nspk,1));
+    %nspk is a single number, which means this comes out to 1. Try below.
+    
+    naux = min(handles.par.max_spk,nspk);
     if size(spikes,1) < 15
         	ME = MException('MyComponent:notEnoughSpikes', 'Less than 15 spikes detected');
             throw(ME)
@@ -237,29 +254,42 @@ else
     [inspk] = wave_features(spikes,handles.par);                 %Extract spike features.
     handles.par.inputs = size(inspk,2);                       % number of inputs to the clustering
 
-    if handles.par.permut == 'y'
-        if handles.par.match == 'y'
-            naux = min(handles.par.max_spk,size(inspk,1));
-            ipermut = randperm(length(inspk));
-            ipermut(naux+1:end) = [];
-        else
-            ipermut = randperm(length(inspk));
-        end
-        inspk_aux = inspk(ipermut,:);
+    % Spike amplitudes below some threshold are excluded from clustering.
+    if handles.par.clusThr == 'y'
+      spikePeaks = max(abs(spikes),[],2);
+      spikeMask = spikePeaks > 60; %Get this variable from parameters or spikes, whichever we can add it to most easily.
+      inspk_masked = inspk(spikeMask,:);
+      inspk_ind_masked = nspk_ind(spikeMask,:);
+      if sum(spikeMask) < naux
+        naux = sum(spikeMask);        
+      end
     else
-        if handles.par.match == 'y'
-            naux = min(handles.par.max_spk,size(inspk,1));
-            inspk_aux = inspk(1:naux,:);
-        else
-            inspk_aux = inspk;
-        end
+      inspk_masked = inspk;
+      inspk_ind_masked = nspk_ind;
     end
+    
+    if handles.par.permut == 'y'
+      ipermut = randperm(length(inspk_masked));
+      if handles.par.match == 'y' && handles.par.max_spk < length(inspk)
+        ipermut(naux+1:end) = [];
+      end
+      inspk_masked = inspk_masked(ipermut,:);
+      inspk_ind_masked = inspk_ind_masked(ipermut,:);
+    else
+      if handles.par.match == 'y' && handles.par.max_spk < length(inspk)
+          inspk_aux = inspk_masked(1:naux,:); % take first 'par.max_spk' spikes as an input for SPC
+          inspk_ind_masked = inspk_ind_masked(1:naux,:);
+        else
+          inspk_aux = inspk_masked;
+          inspk_ind_masked = inspk_ind_masked;
+      end
+    end
+    
+    %Package spikes for SPC
+    save(handles.par.fname_in,'inspk_aux','-ascii');
 
     %Interaction with SPC
     set(handles.file_name,'string','Running SPC ...'); drawnow
-    fname_in = handles.par.fname_in;
-    
-    save(fname_in,'inspk_aux','-ascii');                      %Input file for SPC
     [clu,tree] = run_cluster(handles.par);
     forced = false(size(spikes,1) ,1);
     rejected = false(1, size(spikes,1));
@@ -286,6 +316,15 @@ if handles.par.permut == 'y' && ~isempty(clu)
     clu_aux(:,1:2) = clu(:,1:2);
     clu = clu_aux;
     clear clu_aux
+    
+    %Make a matching manipulation to the Index vector.
+    inspk_ind_masked = [0; 0; inspk_ind_masked]'; %Clu is mostly columns with 2 added to the front, the input was rows.
+    clu_ind = zeros(1, 2 + size(spikes,1));
+    clu_ind(:,ipermut+2) = inspk_ind_masked(:,(1:length(ipermut))+2);
+    clu_ind(:,1:2) = inspk_ind_masked(:,1:2);
+    inspk_ind_masked = clu_ind;
+    clear clu_ind
+    
 elseif ~isempty(clu)
     naux = size(clu,2)-2;
     clu_aux = zeros(size(clu,1),2 + size(spikes,1)) -1; %when update classes from clu, not selected elements go to cluster 0
@@ -293,7 +332,44 @@ elseif ~isempty(clu)
     clu_aux(:,1:2) = clu(:,1:2);
     clu = clu_aux;
     clear clu_aux
+    
+    %Make a matching manipulation to the Index vector.
+    inspk_ind_masked = [0; 0; inspk_ind_masked]'; %Clu is mostly columns with 2 added to the front, the input was rows.
+    clu_ind = zeros(1, 2 + size(spikes,1));
+    clu_ind(:,(1:naux)+2) = inspk_ind_masked(:,(1:naux)+2);
+    clu_ind(:,1:2) = inspk_ind_masked(:,1:2);
+    inspk_ind_masked = clu_ind;
+    clear clu_ind
 end
+
+%If we set a threshold, resort the members of clu back to their proper
+%place.
+if ~data_handler.with_results % This doesn't need to be done on preprocessed data.
+  if handles.par.clusThr == 'y'
+    spikeMask = find(spikeMask);
+    clu_aux = zeros(size(clu))-1;
+    clu_aux(:,spikeMask+2) = clu(:,(1:length(spikeMask))+2);
+    clu_aux(:,1:2) = clu(:,1:2);
+    clu = clu_aux;
+    clear clu_aux
+    
+    %Complementary Index step
+    clu_ind = zeros(size(inspk_ind_masked));
+    clu_ind(:,spikeMask+2) = inspk_ind_masked(:,(1:length(spikeMask))+2);
+    clu_ind(:,1:2) = inspk_ind_masked(:,1:2);
+    inspk_ind_masked = clu_ind;
+    clear clu_ind
+  end
+  
+  %Check if the index is correctly recreated correctly. The numbers should
+  %match their indicies (minus 2).
+  matchInd = (find(inspk_ind_masked(3:end)) == inspk_ind_masked(inspk_ind_masked ~= 0));
+  if size(inspk_masked,1)> handles.par.max_spk
+    matchInd = matchInd(1:handles.par.max_spk);
+  end
+  assert(sum(matchInd) == length(matchInd));
+end
+
 USER_DATA = get(handles.wave_clus_figure,'userdata');
 USER_DATA{1} = handles.par;
 USER_DATA{2} = spikes;
@@ -538,7 +614,8 @@ cluster_class = zeros(size(spikes,1),2);
 cluster_class(:,1) = classes(:);
 cluster_class(:,2) = USER_DATA{3}';
 
-outfile=['times_' used_par.nick_name];
+[fpath, ~, ~] = fileparts(handles.file_name.String);
+outfile=[fpath filesep 'times_' used_par.nick_name];
 
 par = struct;
 par = update_parameters(par,used_par,'relevant');
@@ -594,7 +671,7 @@ file_names = {'','a','b','c','d','e','f'};
 h_figs = get(0,'children');
 for i=1:length(fig_names)
 	h_fig =  findobj(h_figs,'tag',['wave_clus_' fig_names{i}]);
-    new_file_name = ['fig2print_' outfile(7:end) file_names{i} '.png'];
+    new_file_name = [fpath filesep 'fig2print_' used_par.nick_name file_names{i} '.png'];
 	if ~isempty(h_fig)
         figure(h_fig); set(gcf, 'PaperUnits', 'inches', 'PaperType', 'A4', 'PaperPositionMode', 'auto','PaperOrientation','portrait');
         print(h_fig,'-dpng',new_file_name,'-r300');
