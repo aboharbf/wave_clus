@@ -621,6 +621,7 @@ par = struct;
 par = update_parameters(par,used_par,'relevant');
 par = update_parameters(par,used_par,'batch_plot');
 par.sorting_date = datestr(now);
+threshold = par.threshold; %Preserve similarity to batch file output.
 
 gui_status = struct();
 gui_status.current_temp =  gui_classes_data(1,1);
@@ -633,7 +634,7 @@ for i = 1:length(classes_names)
 end
 forced = USER_DATA{13};
 
-var_list = 'cluster_class'',''par'',''spikes'',''gui_status'', ''forced'', ''Temp''';
+var_list = 'cluster_class'',''par'',''spikes'',''gui_status'', ''forced'', ''Temp'',''threshold''';
 
 if ~isempty(USER_DATA{7})
     inspk = USER_DATA{7};

@@ -2,7 +2,7 @@ function output_files = Do_clustering(input, varargin)
 
 % PROGRAM Do_clustering.
 % Does clustering on all files in Files.txt
-% Runs after Get_spikes, which prepares '*_spikes.mat' files.
+% Runs after Get_spikes.
 %
 % function Do_clustering(input, par_input)
 % Saves spikes, spike times (in ms), coefficients used (inspk), used
@@ -10,13 +10,13 @@ function output_files = Do_clustering(input, varargin)
 % results (cluster_class).
 %
 %input must be:
-%               A .txt file with the names of the '*_spikes.mat' files to use.
-%               A matlab cell with the names of the '*_spikes.mat' files to use.
+%               A .txt file with the names of the _spikes files to use.
+%               A matlab cell with the names of the _spikesfiles to use.
 %               A vector with channel numbers. In this case the function will proccess all the
-%                   '*_spikes.mat' files located in the folder with those
+%                   '_spikes.mat' files located in the folder with those
 %                   channel numbers (e.g., CSC1_spikes.mat or NSX4_spikes.mat)
 %               'all', in this case the functions will process all the
-%                   '*_spikes.mat' files in the folder.
+%                   '_spikes.mat' files in the folder.
 % optional argument 'par' and the next input must be a struct with some of
 %       the SPC parameters (the detection parameters are taken from the
 %       XXX_spikes file or the set_parameters file. All the parameters included
@@ -25,9 +25,6 @@ function output_files = Do_clustering(input, varargin)
 % optional argument 'make_times': true for computing the sorting from the XXX_spikes files.
 % optional argument 'make_plots': true for plotting the results based on the save XXX_times files.
 % optional argument 'resolution': resolution string used by the plots (default: '-r150').
-%
-% See also
-% Get_spikes
 
 
 % Example
@@ -115,7 +112,7 @@ if isnumeric(input) || any(strcmp(input,'all'))  %cases for numeric or 'all' inp
             filenames = [filenames {fname}];
         else
             aux = regexp(fname, '\d+', 'match');
-            if ~isempty(aux) && ismember(str2num(aux{1}),input)
+            if ismember(str2num(aux{1}),input)
                 filenames = [filenames {fname}];
             end
         end
@@ -169,10 +166,6 @@ if make_times
     else
       for fnum = 1:length(filenames)
         filename = filenames{fnum};
-        %Load the output to retrieve the threshold.
-        tmp = load(filename,'par');
-        par_input.threshold(fnum) = tmp.par.threshold;
-        clear tmp
         %do clustering
         output_files{fnum} = do_clustering_single_FASort(filename, min_spikes4SPC, par_file, par_input, fnum);
         fprintf('%d of %d ''times'' files finished.\n',count_new_times(initial_date, filenames),Nfiles)
@@ -670,7 +663,6 @@ par.fname = [data_handler.file_path filesep 'data_' data_handler.nick_name];
 par.nick_name = data_handler.nick_name;
 par.file_path = data_handler.file_path;
 par.fnamespc = [data_handler.file_path filesep 'data_wc' num2str(fnum)];
-par.threshold = par_input.threshold;
 
 % LOAD SPIKES
 if data_handler.with_spikes            			%data have some time of _spikes files
@@ -697,7 +689,7 @@ par.inputs = size(inspk,2);                       % number of inputs to the clus
 
 % Spike amplitudes below some threshold are excluded from clustering.
 if ~isfield(par,'clusThr')
-    par.clusThr = 'y'
+    par.clusThr = 'y';
 end
 if par.clusThr == 'y'
   spikePeaks = max(abs(spikes),[],2);
@@ -856,15 +848,20 @@ cluster_class = zeros(nspk,2);
 cluster_class(:,2)= index';
 cluster_class(:,1)= classes';
 
+%Recover threshold saved in spike files, add them to clustering results.
+tmp = load(filename,'threshold');
+threshold = mean(tmp.threshold);
+clear tmp
+
 %Save Clustering Results
 output_file = [data_handler.file_path filesep 'times_' data_handler.nick_name '.mat'];
 try
-  save(output_file, 'cluster_class','spikes', 'par','inspk','forced','Temp','gui_status');
+  save(output_file, 'cluster_class','spikes', 'par','inspk','forced','Temp','gui_status','threshold');
   if exist('ipermut','var')
     save(output_file,'ipermut','-append');
   end
 catch
-  save(output_file, 'cluster_class','spikes', 'par','inspk','forced','Temp','gui_status','-v7.3');
+  save(output_file, 'cluster_class','spikes', 'par','inspk','forced','Temp','gui_status','threshold','-v7.3');
   if exist('ipermut','var')
     save(output_file,'ipermut','-append','-v7.3');
   end
