@@ -5,6 +5,10 @@ function [outfile_path] = parse_data_NSx(filename,max_memo_GB,output_name,channe
 % stored in RAM, so it is used to compute the number of segments in which
 % the data should be split for processing
 
+if ~exist('filename')
+  filename = uigetfile('*.ns5');
+end
+
 if length(filename)<3 || (~strcmpi(filename(2:3),':\') && ...
                  ~strcmpi(filename(1),'/') && ...
                  ~strcmpi(filename(2),'/') && ...
@@ -23,9 +27,7 @@ end
 outDirPath = dir([parsedFolder '/'  file '_NSX_Ch*.NC5']);
 if ~isempty(outDirPath)
   disp('Data already processed - returning appropriate paths')
-  for i = 1:length(outDirPath)
-    outfile_path{i} = [outDirPath(i).folder filesep outDirPath(i).name];
-  end
+  outfile_path = fullfile({outDirPath.folder}, {outDirPath.name})';
   return
 else
   with_memory=true;
@@ -35,7 +37,7 @@ else
     with_memory=false;
   end
   if with_memory
-    [userview,systemview] = memory;
+    [userview, systemview] = memory;
     memo_avaible = floor(systemview.PhysicalMemory.Available*0.80);
     if exist('max_memo_GB','var') && ~isempty(max_memo_GB)
       max_memo = max_memo_GB*(1024)^3;
