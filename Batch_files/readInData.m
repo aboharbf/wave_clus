@@ -37,12 +37,15 @@ classdef readInData < handle
             with_par = false;
             results_selected = false;
 
-            if length(fnam)>6 && strcmp(fnam(1:6),'times_') && strcmp(ext,'.mat') %if a 'times' file was selected.
+            % if a 'times' file was selected.
+            if length(fnam)>6 && strcmp(fnam(1:6),'times_') && strcmp(ext,'.mat') 
                 obj.with_results = true;
                 results_selected = true;
                 obj.nick_name = fnam(7:end);
             end
-            if length(fnam)>7 && strcmp(fnam(end-6:end),'_spikes') && (strcmp(ext,'.mat') || isempty(ext))%if a 'spikes' file was selected.
+            
+            % if a 'spikes' file was selected.
+            if length(fnam)>7 && strcmp(fnam(end-6:end),'_spikes') && (strcmp(ext,'.mat') || isempty(ext))
                 obj.with_wc_spikes = true;
                 results_selected =true;
                 obj.nick_name = fnam(1:end-7);
@@ -51,16 +54,16 @@ classdef readInData < handle
             keep_results = (~isfield(par_ui,'reset_results')) || (~ par_ui.reset_results);
             if  keep_results ||  obj.with_results
                 %Search for previous results
-                if exist(['times_' obj.nick_name '.mat'],'file')
-                    finfo = whos('-file',['times_' obj.nick_name '.mat']);
+                if exist(fullfile(obj.file_path, ['times_' obj.nick_name '.mat']),'file')
+                    finfo = whos('-file',fullfile(obj.file_path, ['times_' obj.nick_name '.mat']));
                     if ismember('spikes',{finfo.name})
                         obj.with_wc_spikes = true;
                     elseif ismember('spikes_file',{finfo.name})
-                        load(fullfile(obj.file_path, ['times_' obj.nick_name '.mat'],'spikes_file');
+                        load(fullfile(obj.file_path, ['times_' obj.nick_name '.mat']),'spikes_file');
                         obj.spikes_file = spikes_file;
                     end
                    
-                    if exist([obj.file_path filesep 'data_' obj.nick_name '.dg_01.lab'],'file') && exist([obj.file_path filesep 'data_' obj.nick_name '.dg_01'],'file')
+                    if exist(fullfile(obj.file_path,['data_' obj.nick_name '.dg_01.lab']),'file') && exist(fullfile(obj.file_path, ['data_' obj.nick_name '.dg_01']),'file')
                         obj.with_spc = true;
                         obj.with_results = true;
                     end

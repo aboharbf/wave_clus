@@ -110,7 +110,6 @@ end
 % UIWAIT makes wave_clus wait for user response (see UIRESUME)
 % uiwait(handles.figure1);
 
-
 % --- Outputs from this function are returned to the command line.
 function varargout = wave_clus_OutputFcn(hObject, eventdata, handles)
 % varargout  cell array for returning output args (see VARARGOUT);
@@ -127,7 +126,6 @@ clus_colors = [[0.0 0.0 1.0];[1.0 0.0 0.0];[0.0 0.5 0.0];[0.620690 0.0 0.0];[0.4
 
 
 set(0,'DefaultAxesColorOrder',clus_colors)
-
 
 % --- Executes on button press in load_data_button.
 function load_data_button_Callback(hObject, eventdata, handles)
@@ -197,7 +195,16 @@ handles.par.fname = ['data_' data_handler.nick_name];
 handles.par.nick_name = data_handler.nick_name;
 handles.par.fnamesave = fullfile(data_handler.file_path, handles.par.fname);                  %filename if "save clusters" button is pressed
 handles.par.fnamespc = fullfile(data_handler.file_path, ['data_wc' ChNum]);
-handles.par.spikes_file = fullfile(data_handler.file_path, data_handler.spikes_file);  
+
+% Not sure if this is the proper handling, but it seems like this variable
+% being populated prevents the 'spikes' variable from being saved when
+% hitting save.
+if ~isempty(data_handler.spikes_file)
+  handles.par.spikes_file = fullfile(data_handler.file_path, data_handler.spikes_file);
+else
+  handles.par.spikes_file = data_handler.spikes_file;
+end
+
 handles.par = data_handler.update_par(handles.par);
 check_WC_params(handles.par)
 
@@ -576,7 +583,6 @@ handles.undo = 0;
 handles.minclus = min_clus;
 plot_spikes(handles);
 
-
 % --- Executes on button press in save_clusters_button.
 function save_clusters_button_Callback(hObject, eventdata, handles, developer_mode)
 USER_DATA = get(handles.wave_clus_figure,'userdata');
@@ -616,12 +622,13 @@ cluster_class(:,1) = classes(:);
 cluster_class(:,2) = USER_DATA{3}';
 
 [fpath, ~, ~] = fileparts(handles.file_name.String);
-outfile=[fpath filesep 'times_' used_par.nick_name];
+outfile = fullfile(fpath, ['times_' used_par.nick_name]);
 
 par = struct;
 par = update_parameters(par,used_par,'relevant');
 par = update_parameters(par,used_par,'batch_plot');
 par.sorting_date = datestr(now);
+
 if isfield(par, 'threshold')
   threshold = par.threshold;  %  Preserve similarity to batch file output.
 elseif isfield(used_par, 'thr')
